@@ -82,8 +82,8 @@ int main(int argc, char *argv[]) {
 
     MainWindow mainWindow;
     mw = &mainWindow;
-    mainWindow.setBoard(startingBoard);
+    MainWindow::setBoard(startingBoard);
     mainWindow.show();
 
-    return app.exec();
+    return QApplication::exec();
 }
