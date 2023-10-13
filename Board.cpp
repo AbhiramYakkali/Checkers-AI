@@ -3,9 +3,17 @@
 #include "Board.h"
 #include "main.h"
 
-void Board::checkJump(int startR, int startC, int endR, int endC, int parent, int piece) {
+void Board::checkJump(int startR, int startC, int endR, int endC, int parent, int piece, std::vector<int> prevCheckedJumps) {
     //Check out of bounds
     if(endR < 0 || endR > 7 || endC < 0 || endC > 7) return;
+
+    //Check if this square has been checked for jumps previously
+    //Prevents infinite loops when checking jumps for kings
+    int sq = startR * 10 + startC;
+    for(int square : prevCheckedJumps) {
+        if(square == sq) return;
+    }
+    prevCheckedJumps.push_back(sq);
 
     int mid = board[(startR + endR) / 2][(startC + endC) / 2];
     if((mid % 2 != piece % 2 && mid != 0) && board[endR][endC] == 0) {
@@ -21,17 +29,18 @@ void Board::checkJump(int startR, int startC, int endR, int endC, int parent, in
         onlyJumps = true;
 
         //Check for double, triple, etc. jumps
-        checkJump(endR, endC, endR + (endR - startR), endC + 2, index, piece);
-        checkJump(endR, endC, endR + (endR - startR), endC - 2, index, piece);
+        checkJump(endR, endC, endR + (endR - startR), endC + 2, index, piece, prevCheckedJumps);
+        checkJump(endR, endC, endR + (endR - startR), endC - 2, index, piece, prevCheckedJumps);
 
         if(piece > 2) {
             //Check backwards jumps if piece is a king
-            checkJump(endR, endC, endR - (endR - startR), endC + (endC - startC), index, piece);
+            checkJump(endR, endC, endR - (endR - startR), endC + (endC - startC), index, piece, prevCheckedJumps);
         }
     }
 }
 void Board::checkJump(int startR, int startC, int endR, int endC) {
-    checkJump(startR, startC, endR, endC, -1, board[startR][startC]);
+    std::vector<int> jumps;
+    checkJump(startR, startC, endR, endC, -1, board[startR][startC], jumps);
 }
 void Board::checkMove(int startR, int startC, int endR, int endC) {
     //Check out of bounds

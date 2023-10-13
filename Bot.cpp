@@ -5,7 +5,7 @@
 #include <chrono>
 
 //Depth that the bot will search to evaluate positions
-#define DEFAULT_DEPTH 12
+#define DEFAULT_DEPTH 10
 
 int positions = 0;
 auto startTime = std::chrono::high_resolution_clock::now();

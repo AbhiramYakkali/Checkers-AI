@@ -14,7 +14,7 @@ private:
     int movesWithoutCaptures;
     std::vector<move> allMoves, moves;
 
-    void checkJump(int startR, int startC, int endR, int endC, int parent, int piece);
+    void checkJump(int startR, int startC, int endR, int endC, int parent, int piece, std::vector<int> prevCheckedJumps);
     void checkJump(int startR, int startC, int endR, int endC);
     void checkMove(int startR, int startC, int endR, int endC);
     void findMovesForSquare(int row, int col);
