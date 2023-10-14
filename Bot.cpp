@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 #include <QApplication>
 #include "Bot.h"
@@ -9,6 +8,23 @@
 
 int positions = 0;
 auto startTime = std::chrono::high_resolution_clock::now();
+
+//Returns a long representing the current board
+long generateBoardState(int board[][8]) {
+    long boardState = 0;
+
+    for(int i = 0; i < 8; i++) {
+        for(int j = 0; j < 8; j++) {
+            //Skip empty squares
+            if((i + j) % 2 == 0) continue;
+
+            boardState *= 10;
+            boardState += board[i][j];
+        }
+    }
+
+    return boardState;
+}
 
 //Generates an evaluation of the position based on the board
 //Positive numbers: black advantage, negative: white advantage
@@ -45,7 +61,13 @@ int evaluate(int board[][8], int color) {
 
 //Alpha: best move that bot (maximizing player) is guaranteed in this branch
 //Beta: best move that player (minimizing player) is guaranteed in this branch
-int search(Board board, int depth, int alpha, int beta, bool max, int color) {
+int search(Board board, int depth, int alpha, int beta, bool max, int color, std::unordered_map<long, int>* transpositionTable) {
+    //Check transposition table to see if this position was searched previously
+    long boardState = generateBoardState(board.getBoard());
+    if(transpositionTable->count(boardState) != 0) {
+        return transpositionTable->at(boardState);
+    }
+
     int outcome = board.endTurn();
     //See if the game ends after this move and assign values accordingly
     if(outcome != -1) {
@@ -66,19 +88,25 @@ int search(Board board, int depth, int alpha, int beta, bool max, int color) {
             //If depth = 0, evaluate the board at this position and return
             return evaluate(board.makeBoardForMove(m).getBoard(), color);
         } else {
-            eval = search(board.makeBoardForMove(m), depth - 1, alpha, beta, !max, color);
+            eval = search(board.makeBoardForMove(m), depth - 1, alpha, beta, !max, color, transpositionTable);
 
             //Update alpha and beta if better moves are found
             if(max && eval > alpha) alpha = eval;
             if(!max && eval < beta) beta = eval;
 
-            //Pruning (comment out line to disable pruning for testing purposes)
+            //Alpha-beta pruning
             if(beta <= alpha) break;
         }
     }
 
-    if(max) return alpha;
-    else return beta;
+    if(max) {
+        transpositionTable->insert({boardState, alpha});
+        return alpha;
+    }
+    else {
+        transpositionTable->insert({boardState, beta});
+        return beta;
+    }
 }
 //Returns the best move the bot found
 //This function maximizes (finds best move for the bot based on all options)
@@ -89,14 +117,18 @@ move findBestMove(Board board, int color) {
     //Keep track of time (to print out how long it took to find best move)
     startTime = std::chrono::high_resolution_clock::now();
 
+    //Initialize transposition table
+    //Maps board positions to previously found evals to eliminate searching of identical positions
+    std::unordered_map<long, int> transpositionTable;
+
     //Keep track of the best move found
     move bestMove = moves.at(0);
-    int bestEval = search(board.makeBoardForMove(bestMove), DEFAULT_DEPTH, -1000, 1000, false, color);
+    int bestEval = search(board.makeBoardForMove(bestMove), DEFAULT_DEPTH, -1000, 1000, false, color, &transpositionTable);
 
     //Iterate through all possible moves, performing minmax search on each
     for(int i = 1; i < moves.size(); i++) {
         move m = moves.at(i);
-        int eval = search(board.makeBoardForMove(m), DEFAULT_DEPTH, -1000, 1000, false, color);
+        int eval = search(board.makeBoardForMove(m), DEFAULT_DEPTH, -1000, 1000, false, color, &transpositionTable);
 
         if(eval > bestEval) {
             bestEval = eval;
