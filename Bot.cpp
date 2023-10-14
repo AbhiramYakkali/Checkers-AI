@@ -4,7 +4,9 @@
 #include <chrono>
 
 //Depth that the bot will search to evaluate positions
-#define DEFAULT_DEPTH 10
+//If this number is odd the bot will maximize the last checked move
+//If this number is even the bot will minimize the last checked move
+#define DEFAULT_DEPTH 11
 
 int positions = 0;
 auto startTime = std::chrono::high_resolution_clock::now();
@@ -132,6 +134,11 @@ move findBestMove(Board board, int color) {
 
         if(eval > bestEval) {
             bestEval = eval;
+            bestMove = m;
+        } else if(eval == bestEval && rand() / (RAND_MAX / 2) == 1) {
+            //Introduce randomness to move selection in case of several equal moves
+            //This is in an attempt to reduce back and forth shuffling of pieces in equal endgames
+            //Also helps to make each game more unique
             bestMove = m;
         }
     }
